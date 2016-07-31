@@ -14,7 +14,7 @@ struct blockCutTree{
     vi tree[N];
     int P[N][36];
     int level1[N];
-    vector<pair<pair<pii,int>,int> > edges;
+    vector<pair<pair<pii,int>,int> > edges; // here edges store the following information < < <u,v>,weight>,index> u : from node, v : to node
     int comcount;
     int countPairNodes;
     map<pii,int> mp1;
