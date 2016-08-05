@@ -85,6 +85,7 @@ int buildMatchingMachine(const vector<string> &words){
 	}
 
 	queue<int> Q1;
+	debug;
 	For(c,0,26){
 		if(g[0][c]!=-1 && g[0][c]!=0){
 			f[g[0][c]]=0;
