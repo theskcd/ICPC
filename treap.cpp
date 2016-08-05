@@ -32,8 +32,7 @@ using namespace std;
 #define mod 1000000007
 #define mod1 1000000009
 #define LIMIT 4000000000000000000LL
-#define N 100100
-#define M 300001
+#define N 510
 const string debug_line="yolo";
 #define debug error(debug_line)
 // const double PI=4*atan(1);
@@ -46,205 +45,218 @@ typedef complex<double> point;
 const long long linf = 1e15+5;
 const int BLOCK=330;
 
-struct item{
-	int c;
-	int q;
+int a[211];
+vector<string> s;
+vi output[211];
+ll sum1[211];
+int f[211];
+int g[211][26];
+int numStates;
+vector<vector<ll> >identity;
 
-	item(){};
+void merge1(int s1,int s2){
+	output[s1].insert(output[s1].end(),output[s2].begin(),output[s2].end());
+}
 
-	item(int _c,int _q){
-		c=_c;
-		q=_q;
-	};
+int buildMatchingMachine(const vector<string> &words){
+	int states=1;
+	memset(f,-1,sizeof(f));
+	memset(g,-1,sizeof(g));
+	memset(output,0,sizeof(output));
 
-	bool operator<(const item &other) const{
-		if(q!=other.q){
-			return q>other.q;
+	For(i,0,words.size()){
+		const string &word=words[i];
+		int currentState=0;
+		For(j,0,word.size()){
+			int c=word[j]-'a';
+			if(g[currentState][c]==-1){
+				g[currentState][c]=states++;
+			}
+			// Error3(currentState,g[currentState][c],(char)(c+'a'));
+			currentState=g[currentState][c];
 		}
-		return c<other.c;
+		output[currentState].pb(i);
 	}
-};
 
-int ans[200010];
+	For(c,0,26){
+		if(g[0][c]==-1){
+			g[0][c]=0;
+		}
+	}
 
-struct node{
-	node *left;
-	node *right;
-	unsigned int pri;
-	int val,lazyVal;
-	int sum,lazySum;
-	int i;
-};
+	queue<int> Q1;
+	For(c,0,26){
+		if(g[0][c]!=-1 && g[0][c]!=0){
+			f[g[0][c]]=0;
+			Q1.push(g[0][c]);
+		}
+	}
 
-unsigned int genPri(){
-	unsigned int x=rand();
-	unsigned int y=rand();
-	return (x<<16)|y;
+	while(!Q1.empty()){
+		int state=Q1.front();
+		// Error("ah-corsaik",state);
+		Q1.pop();
+		For(c,0,26){
+			if(g[state][c]!=-1){
+				int failure=f[state];
+				while(g[failure][c]==-1){
+					failure=f[failure];
+				}
+				failure=g[failure][c];
+				f[g[state][c]]=failure;
+				merge1(g[state][c],failure);
+				Q1.push(g[state][c]);
+			}
+			// Error(state,c);
+		}
+	}
+
+	return states;
 }
 
-node *reassign(node *n,node *l,node *r,unsigned int pri,int val,int sum,int i){
-	n->left=l;
-	n->right=r;
-	n->pri=pri;
-	n->val=val;
-	n->sum=sum;
-	n->i=i;
-	n->lazySum=0;
-	n->lazyVal=0;
-	return n;
+void correct1(int state1){
+	sort(all(output[state1]));
+	output[state1].erase(unique(output[state1].begin(),output[state1].end()),output[state1].end());
+	rep(t1,output[state1]){
+		sum1[state1]+=a[t1];
+	}
+	// Error(state1,sum1[state1]);
 }
 
-node *reassign(node *n,node *l,node *r){
-	return reassign(n,l,r,n->pri,n->val,n->sum,n->i);
-}
+void multiply(vector<vector<ll> > a,vector<vector<ll> > b,vector<vector<ll> >&res){
+	res.resize(numStates+1,vector<ll>(numStates+1));
+	For(i,0,numStates){
+		For(j,0,numStates){
+			res[i][j]=-1e18;
+		}
+	}
 
-void apply(node *n,int lazyVal,int lazySum){
-	n->val+=lazyVal;
-	n->sum+=lazySum;
-	n->lazySum+=lazySum;
-	n->lazyVal+=lazyVal;
-}
-
-void down(node *n){
-	if(n->left){
-		apply(n->left,n->lazyVal,n->lazySum);
-	}
-	if(n->right){
-		apply(n->right,n->lazyVal,n->lazySum);
-	}
-	n->lazyVal=0;
-	n->lazySum=0;
-}
-
-node *getLeft(node *n){
-	while(n->left){
-		down(n);
-		n=n->left;
-	}
-	return n;
-}
-
-node *getRight(node *n){
-	while(n->right){
-		down(n);
-		n=n->right;
-	}
-	return n;
-}
-
-//{<,>=}
-pair<node *,node *> split(node *n,int k){
-	if(!n){
-		return {nullptr,nullptr};
-	}
-	down(n);
-	node *l;
-	node *r;
-	if(n->val<k){
-		tie(l,r)=split(n->right,k);
-		reassign(n,n->left,l);
-		return {n,r};
-	}
-	tie(l,r)=split(n->left,k);
-	reassign(n,r,n->right);
-	return {l,n};
-}
-
-node *merge(node *l,node *r){
-	if(!l){
-		return r;
-	}
-	if(!r){
-		return l;
-	}
-	down(l);
-	down(r);
-	if(l->pri<r->pri){
-		return reassign(l,l->left,merge(l->right,r));
-	}
-	else{
-		return reassign(r,merge(l,r->left),r->right);
+	For(i,0,numStates){
+		For(j,0,numStates){
+			For(k,0,numStates){
+				{
+					res[i][j]=max(a[i][k]+b[k][j]-sum1[k],res[i][j]);
+				}
+			}
+		}
 	}
 }
 
-node *ins(node *root,node *n){
-	node *l,*r;
-	tie(l,r)=split(root,n->val);
-	return merge(l,merge(n,r));
-}
-
-void traverse(node *n){
-	if(!n){
+void power1(vector<vector<ll> > &dp,ll k){
+	if(k==1){
+		dp.resize(numStates+1,vector<ll>(numStates+1));
+		dp=identity;
 		return ;
 	}
-	down(n);
-	ans[n->i]=n->sum;
-	traverse(n->left);
-	traverse(n->right);
-}
-
-vector<item> listItems;
-
-int main(){
-	int n,m;
-	scanf("%d",&n);
-
-	For(i,0,n){
-		int c,q;
-		scanf("%d%d",&c,&q);
-		item newItem(c,q);
-		listItems.pb(newItem);
-	}
-	
-	sort(all(listItems));
-
-	node *root=nullptr;
-	scanf("%d",&m);
-
-	For(i,0,m){
-		int temp;
-		scanf("%d",&temp);
-		node *newNode=reassign(new node(),nullptr,nullptr,genPri(),temp,0,i);
-		if(!root){
-			root=newNode;
+	else{
+		vector<vector<ll> > res;
+		power1(res,k/2);
+		if(k%2==0){
+			multiply(res,res,dp);
 		}
 		else{
-			root=ins(root,newNode);
+			multiply(res,res,dp);
+			multiply(dp,identity,dp);
 		}
+		return ;
+	}
+}
+
+int findNextState(int currState,int next1){
+	int answer1=currState;
+	int c=next1;
+	while(g[answer1][c]==-1){
+		answer1=f[answer1];
+	}
+	return g[answer1][c];
+}
+
+ll merge2(int s1,int s2){
+	vi v1;
+	// output[s1].insert(output[s1].end(),output[s2].begin(),output[s2].end());
+	v1.insert(v1.end(),output[s1].begin(),output[s1].end());
+	v1.insert(v1.end(),output[s2].begin(),output[s2].end());
+	sort(all(v1));
+	v1.erase(unique(v1.begin(),v1.end()),v1.end());
+	ll answer1=0;
+	// Error(s1,s2);
+	rep(t1,v1){
+		// error(t1);
+		answer1=answer1+a[t1];
+	}
+	// Error3(s1,s2,answer1);
+	return answer1;
+}
+
+int main(){
+	int n;
+	ll l;
+	scanf("%d%lld",&n,&l);
+
+	For(i,0,n){
+		int temp;
+		scanf("%d",&temp);
+		a[i]=temp;
 	}
 
 	For(i,0,n){
-		// error(i);
-		int c=listItems[i].c;
-		node *l,*r;
-		tie(l,r)=split(root,c);
-		if(!r){
-			continue;
-		}
-		apply(r,-c,1);
-		if(!l){
-			root=r;
-			continue;
-		}
-		node *rl=getLeft(r);
-		node *lr=getRight(l);
-		while(rl->val<lr->val){
-			node *tl,*tr;
-			tie(tl,tr)=split(r,rl->val+1);
-			l=ins(l,tl);
-			r=tr;
-			if(!l || !r){
-				break;
-			}
-			rl=getLeft(r);
-			lr=getRight(l);
-		}
-		root=merge(l,r);
+		string temp;
+		cin>>temp;
+		s.pb(temp);
 	}
-	traverse(root);
 
-	For(i,0,m){
-		printf("%d ",ans[i]);
+	debug;
+
+	numStates=buildMatchingMachine(s);
+
+	debug;
+
+	For(i,1,numStates){
+		correct1(i);
 	}
-	printf("\n");
+
+	debug;
+
+	identity.resize(numStates+1,vector<ll>(numStates+1));
+
+	debug;
+
+	For(i,0,numStates){
+		For(j,0,numStates){
+			identity[i][j]=-1e18;
+		}
+	}
+
+	For(i,0,numStates){
+		// Error(i,sum1[i]);
+		For(j,0,26){
+			// Error(i,findNextState(i,j));
+			identity[i][findNextState(i,j)]=max(identity[i][findNextState(i,j)],sum1[i]+sum1[findNextState(i,j)]);
+		}
+	}
+
+	error("identity");
+	// For(i,0,numStates){
+	// 	For(j,0,numStates){
+	// 		printf("%lld ",identity[i][j]);
+	// 	}
+	// 	printf("\n");
+	// }
+
+	vector<vector<ll> > dp;
+	power1(dp,l);
+
+	error("dp");
+	// For(i,0,numStates){
+	// 	For(j,0,numStates){
+	// 		printf("%lld ",dp[i][j]);
+	// 	}
+	// 	printf("\n");
+	// }
+
+	ll answer1=0;
+	For(i,0,numStates){
+		answer1=max(answer1,dp[0][i]);
+	}
+	printf("%lld\n",answer1);
 return 0;}
