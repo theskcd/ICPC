@@ -5,6 +5,8 @@
 //using namespace __gnu_pbds;
 using namespace std;
 
+// (づ°ω°)づﾐe★゜・。。・゜゜・。。・゜☆゜・。。・゜゜・。。・゜
+
 #pragma comment(linker, "/STACK:16777216")
 
 #define Foreach(i, c) for(__typeof((c).begin()) i = (c).begin(); i != (c).end(); ++i)
