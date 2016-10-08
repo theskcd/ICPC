@@ -53,6 +53,7 @@ typedef pair<int,int>pii;
 typedef vector<int> vi;
 typedef complex<double> point;
 
+// TUTTES Theorem for k-edge disconnected spanning trees
 class FoxAirline2
 {
 public:
