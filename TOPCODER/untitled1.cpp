@@ -41,52 +41,99 @@ using namespace std;
 const int inf=0x3f3f3f3f;
 const long double pi=acos(-1.0);
 #define MAX 50010
-// #define N 100000
+#define N 100010
 const string debug_line="yolo";
 #define debug error(debug_line)
-const double PI=4*atan(1);
 #define read() freopen("mergedoutput.txt","r",stdin)
 #define write() freopen("output.txt","w",stdout)
 //template <typename T> using os =  tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 typedef long long ll;
 typedef pair<int,int>pii;
 typedef vector<int> vi;
-typedef complex<double> point;
+typedef complex <long double> complex_t;
+const long double PI = acos((long double)-1.0);
 
-class AlmostFibonacciKnapsack
-{
-public:
-	vector<int> getIndices(long long int x){
-		vector<ll> numList;
-		numList.pb(2);
-		numList.pb(3);
-		ll currNum=4;
-		vi listIndex;
-		while(currNum<=1000000000000000000LL){
-			numList.pb(currNum);
-			//error(currNum);
-			currNum=numList[numList.size()-1]+numList[numList.size()-2]-1;
-		}
+ll a[N];
+int MOD;
+ll answer1=0;
+unordered_map<ll,int> hash1;
 
-		int index1=numList.size()-1;
-		while(index1>=0){
-			if(x==numList[index1] || x>numList[index1]+1){
-				x=x-numList[index1];
-				listIndex.pb(index1+1);
-			}
-			index1--;
-		}
-		sort(all(listIndex));
-		return listIndex;
-	}
-};
-
-int main(){
-	AlmostFibonacciKnapsack alfk;
-	ll temp1;
-	scanf("%lld",&temp1);
-	vi res=alfk.getIndices(temp1);
-	rep(t1,res){
-		error(t1);
+void func(ll &temp){
+	if(temp>MOD){
+		temp=temp-MOD;
 	}
 }
+
+long long nthFib(ll n)
+{
+    long long fib[2][2]= {{1,1},{1,0}},ret[2][2]= {{1,0},{0,1}},tmp[2][2]= {{0,0},{0,0}};
+    int i,j,k;
+    while(n)
+    {
+        if(n&1)
+        {
+            memset(tmp,0,sizeof tmp);
+            for(i=0; i<2; i++) for(j=0; j<2; j++) for(k=0; k<2; k++)
+                        tmp[i][j]=(tmp[i][j]+ret[i][k]*fib[k][j])%MOD;
+            for(i=0; i<2; i++) for(j=0; j<2; j++) ret[i][j]=tmp[i][j];
+        }
+        memset(tmp,0,sizeof tmp);
+        for(i=0; i<2; i++) for(j=0; j<2; j++) for(k=0; k<2; k++)
+                    tmp[i][j]=(tmp[i][j]+fib[i][k]*fib[k][j])%MOD;
+        for(i=0; i<2; i++) for(j=0; j<2; j++) fib[i][j]=tmp[i][j];
+        n/=2;
+    }
+    return (ret[0][1]);
+}
+
+void tryAll(int b,int e){
+	if(b==e){
+		answer1=((answer1+2*nthFib(a[b]+1)-1)%MOD+MOD)%MOD;
+	}
+	else{
+		int m=(b+e)/2;
+		int prevSum=0;
+		ll f1=0;
+		ll f2=0;
+		ll f3=0;
+		ll f4=0;
+		rof(i,m,b-1){
+			prevSum=prevSum+a[i];
+			f1=(f1+nthFib(prevSum+1));
+			func(f1);
+			f2=(f2+nthFib(prevSum));
+			func(f2);
+		}
+		prevSum=0;
+		For(i,m+1,e+1){
+			prevSum=prevSum+a[i];
+			f3=(f3+nthFib(prevSum+1));
+			func(f3);
+			f4=(f4+nthFib(prevSum));
+			func(f4);
+		}
+		ll temp1=(f1*f3+f2*f4)%MOD;
+		temp1=(2*temp1)%MOD;
+		temp1=((temp1-(m-b+1)*(e-m))%MOD+MOD)%MOD;
+		// Error4(b,e,m,temp1);
+		answer1=(answer1+temp1)%MOD;
+		tryAll(b,m);
+		tryAll(m+1,e);
+	}
+}
+
+int main(){
+	int n;
+	ll m;
+	scanf("%d%lld",&n,&m);
+	MOD=m;
+	// error(nthFib(8));
+	For(i,0,n){
+		ll temp;
+		scanf("%lld",&temp);
+		a[i]=temp;
+	}
+
+	tryAll(0,n-1);
+	printf("%lld\n",answer1);
+return 0;}
