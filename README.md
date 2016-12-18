@@ -1,5 +1,3 @@
 # ICPC
-<p align="center">
-  <img src="https://travis-ci.org/sandeepkumarpani888/ICPC.svg?branch=master" alt="Build Status">
-</p>
+[![Build Status](https://travis-ci.org/sandeepkumarpani888/ICPC.svg?branch=master)](https://travis-ci.org/sandeepkumarpani888/ICPC)
 CodeBook of sorts. 
