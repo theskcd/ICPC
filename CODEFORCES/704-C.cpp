@@ -59,11 +59,14 @@ vi clause[200010];
 bool visited[200010];
 vector<pair<ll,ll> > numWays;
 vector<pii> group;
+bool marked[200010];
 ll answer1=1LL;
 set<pii> s1;
 
 void DFS(int clauseId,int prev=-1){
+	// Error(clauseId,prev);
 	group.pb(mp(clauseId,prev));
+	error(group.size());
 	visited[clauseId]=true;
 
 	rep(t1,clauseClause[clauseId]){
@@ -120,13 +123,14 @@ void iterateOverGroup(vector<vector<ll> >&dp,bool mode=0){
 void findAnswer(bool mode){
 	if(mode==1){
 		//start with 0
-		vector<vector<ll> > dp;For(i,0,2)For(j,0,2)dp[i][j]=0;
+		vector<vector<ll> > dp;dp.resize(2,vector<ll>(2,0));
 		if(clause[group[0].x].size()==1){
 			dp[0][0]=1LL;
 		}
 		else{
 			dp[1][1]=1LL;dp[0][0]=1LL;
 		}
+		debug;
 		iterateOverGroup(dp,1);
 		vector<vector<ll> > dp1=dp;
 		For(i,0,2)For(j,0,2)dp[i][j]=0;
@@ -138,15 +142,20 @@ void findAnswer(bool mode){
 			dp[1][0]+=dp1[1][0];dp[0][0]+=dp1[1][1];
 			dp[1][0]+=dp1[0][1];dp[0][0]+=dp1[0][0];
 		}
+		debug;
 		//start with 1
-		vector<vector<ll> > dp2;For(i,0,2)For(j,0,2)dp2[i][j]=0;
+		vector<vector<ll> > dp2;dp2.resize(2,vector<ll>(2,0));
+		Error(group[0].x,clause[group[0].x].size());
 		if(clause[group[0].x].size()==1){
 			dp2[1][1]=1LL;
 		}
 		else{
-			dp2[1][1]=1LL;dp[1][0]=1LL;
+			dp2[1][1]=1LL;dp2[1][0]=1LL;
 		}
+		Error4(dp2[0][0],dp2[0][1],dp2[1][0],dp2[1][1]);
+		// debug;
 		iterateOverGroup(dp2,1);
+		Error4(dp2[0][0],dp2[0][1],dp2[1][0],dp2[1][1]);
 		vector<vector<ll> > dp3=dp2;
 		For(i,0,2)For(j,0,2)dp2[i][j]=0;
 		if(group[group.size()-1].y==-1){
@@ -157,9 +166,12 @@ void findAnswer(bool mode){
 			dp2[0][1]+=dp3[1][0]+dp3[1][1];
 			dp2[1][1]+=dp3[0][1]+dp3[0][0];
 		}
+		Error4(dp2[0][0],dp2[0][1],dp2[1][0],dp2[1][1]);
+		// debug;
 		//done
 		numWays.pb(mp(dp[0][0]+dp[0][1]+dp2[0][1]+dp2[0][0],
 			dp[1][0]+dp[1][1]+dp2[1][0]+dp2[1][1]));
+		Error(numWays[numWays.size()-1].x,numWays[numWays.size()-1].y);
 	}
 	else{
 		vector<vector<ll> > dp;dp.clear();dp.resize(2,vector<ll>(2,0));
@@ -179,20 +191,25 @@ void findAnswer(bool mode){
 void insertToComp(int var,int id){
 	if(var<0){
 		vertexClause[-var].pb(-id);
+		clause[id].pb(-var);
 	}
 	else{
 		vertexClause[var].pb(id);
+		clause[id].pb(var);
 	}
 }
 
 void findWays(){
+	error(answer1);
 	vector<ll> dp={1,1};
 	error(numWays.size());
-	For(i,0,numWays.size()){
+	dp[0]=numWays[0].x;dp[1]=numWays[0].y;
+	For(i,1,numWays.size()){
 		vector<ll> dp1=dp;dp.clear();
 		dp.resize(2,0);assert(dp[0]==0 && dp[1]==0);
+		Error4(dp1[0],dp1[1],numWays[i].x,numWays[i].y);
 		dp[0]=((dp1[1]*numWays[i].y)%mod+(dp1[0]*numWays[i].x)%mod)%mod;
-		dp[1]=((dp1[0]*numWays[i].x)%mod+(dp1[1]*numWays[i].y)%mod)%mod;
+		dp[1]=((dp1[0]*numWays[i].y)%mod+(dp1[1]*numWays[i].x)%mod)%mod;
 		Error(dp[0],dp[1]);
 	}
 	Error(answer1,dp[1]);
@@ -202,30 +219,49 @@ void findWays(){
 int main(){
 	int n,m;
 	scanf("%d%d",&n,&m);
+	vector<pii> v1;
 	For(i,0,n){
 		int k1;scanf("%d",&k1);
 		if(k1==1){
 			int t1;scanf("%d",&t1);
 			s1.insert(mp(t1,t1));
+			v1.pb(mp(t1,t1));
 		}
 		else{
 			int t1,t2;scanf("%d%d",&t1,&t2);
 			int min1=min(t1,t2);int max1=max(t1,t2);
 			s1.insert(mp(min1,max1));
+			if(min1==max1){
+				numWays.pb(mp(1,1));
+				marked[max1]=true;
+			}
+			else if(min1==-max1){
+				numWays.pb(mp(0,2));
+				marked[max1]=true;
+			}
+			else{
+				v1.pb(mp(min1,max1));
+			}
 		}
 	}
-	n=(int)s1.size();
+	// n=(int)s1.size();
+	n=v1.size();
 	int counter1=1;
-	rep(t1,s1){
+	rep(t1,v1){
 		if(t1.x==t1.y){
-			insertToComp(t1.x,counter1);
+			numWays.pb(mp(1,1));
+			// insertToComp(t1.x,counter1);
+		}
+		else if(t1.x==-t1.y){
+			numWays.pb(mp(0,2));
 		}
 		else{
 			insertToComp(t1.x,counter1);insertToComp(t1.y,counter1);
 		}
-		Error3(counter1,t1.x,t1.y);
+		// Error3(counter1,t1.x,t1.y);
 		counter1++;
 	}
+	error(n);
 	// For(i,0,n){
 	// 	int k1;
 	// 	scanf("%d",&k1);
@@ -248,7 +284,7 @@ int main(){
 	// }
 
 	For(i,1,m+1){
-		if(vertexClause[i].size()==0){
+		if(vertexClause[i].size()==0 && !marked[i]){
 			answer1=(answer1*2LL)%mod;
 		}
 		else if(vertexClause[i].size()==1){
@@ -298,11 +334,15 @@ int main(){
 		if(!visited[i]){
 			group.clear();
 			Error("DFS2",i);
-			DFS(i);findAnswer(1);
-			rep(t1,group){
-				printf("(%d,%d) ",t1.x,t1.y);
-			}
-			printf("\n");
+			DFS(i);
+			// Error("done",group.size());
+			// rep(t1,group){
+			// 	printf("%d %d\n",t1.x,t1.y);
+			// 	printf("(%d,%d) ",t1.x,t1.y);
+			// }
+			// debug;
+			findAnswer(1);
+			// printf("\n");
 			Error("size1",numWays.size());
 			// error(group.size());
 		}
