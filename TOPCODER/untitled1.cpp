@@ -35,13 +35,10 @@ using namespace std;
 #define LIMIT 10000000000000000LL
 #define INF 10000000000LL
 #define MAX1 1000000000
-//#define si(n) scanf("%d",&n)
-//#define sii(n,m) scanf("%d%d",&n,&m)
-//#define pi(n) printf("%d\n",n)
 const int inf=0x3f3f3f3f;
 const long double pi=acos(-1.0);
 #define MAX 50010
-#define N 100010
+// #define N 100010
 const string debug_line="yolo";
 #define debug error(debug_line)
 #define read() freopen("mergedoutput.txt","r",stdin)
@@ -50,90 +47,163 @@ const string debug_line="yolo";
 typedef long long ll;
 typedef pair<int,int>pii;
 typedef vector<int> vi;
+typedef unsigned long long ull;
 typedef complex <long double> complex_t;
 const long double PI = acos((long double)-1.0);
+const long double eps=1e-6;
+ull getRand(){return ((ull)rand()<<40)+((ull)rand()<<20)+((ull)rand());}
 
-ll a[N];
-int MOD;
-ll answer1=0;
-unordered_map<ll,int> hash1;
+struct Trie{
+	Trie *next1[26];
+	int size1;
+	int occur;
+	Trie(){
+		size1=1;
+		occur=1;
+		For(i,0,26){
+			next1[i]=NULL;
+		}
+	}
+};
 
-void func(ll &temp){
-	if(temp>MOD){
-		temp=temp-MOD;
+vector<pii> Adj[300010];
+int level1[300010];
+int size1[300010];
+int delta1[300010];
+Trie *madeTries[300010];
+bool visited[300010];
+
+void DFS(int u,int p){
+	visited[u]=true;
+	madeTries[u]=new Trie();
+	size1[u]=1;
+	level1[u]=level1[p]+1;
+	rep(t1,Adj[u]){
+		if(!visited[t1.x]){
+			DFS(t1.x,u);
+			madeTries[u]->next1[t1.y]=madeTries[t1.x];
+			madeTries[u]->occur+=madeTries[t1.x]->occur;
+			madeTries[u]->size1+=madeTries[t1.x]->size1;
+			size1[u]+=size1[t1.x];
+		}
+	}
+	// Error(u,madeTries[u]->size1);
+}
+
+
+//TODO: fix size and occur to clear the trie and reset it
+int mergeNode(Trie *trie1,int node1){
+	// trie1->size1=1;
+	int newNodesAdded=0;
+	rep(t1,Adj[node1]){
+		if(trie1->next1[t1.y]==NULL){
+			trie1->next1[t1.y]=new Trie();
+			newNodesAdded++;
+			newNodesAdded+=mergeNode(trie1->next1[t1.y],t1.x);
+			trie1->size1+=trie1->next1[t1.y]->size1;
+		}
+		else{
+			trie1->next1[t1.y]->occur++;
+			newNodesAdded+=mergeNode(trie1->next1[t1.y],t1.x);
+			trie1->size1+=trie1->next1[t1.y]->size1;
+		}
+	}
+	trie1->size1+=newNodesAdded;
+	return newNodesAdded;
+}
+
+int removeNode(Trie *trie1,int node1){
+	int removeNodes=0;
+	rep(t1,Adj[node1]){
+		removeNodes+=removeNode(trie1->next1[t1.y],t1.x);
+		trie1->next1[t1.y]->occur--;
+		if(trie1->next1[t1.y]->occur==0){
+			trie1->next1[t1.y]=NULL;
+			trie1->size1--;
+		}
 	}
 }
 
-long long nthFib(ll n)
-{
-    long long fib[2][2]= {{1,1},{1,0}},ret[2][2]= {{1,0},{0,1}},tmp[2][2]= {{0,0},{0,0}};
-    int i,j,k;
-    while(n)
-    {
-        if(n&1)
-        {
-            memset(tmp,0,sizeof tmp);
-            for(i=0; i<2; i++) for(j=0; j<2; j++) for(k=0; k<2; k++)
-                        tmp[i][j]=(tmp[i][j]+ret[i][k]*fib[k][j])%MOD;
-            for(i=0; i<2; i++) for(j=0; j<2; j++) ret[i][j]=tmp[i][j];
-        }
-        memset(tmp,0,sizeof tmp);
-        for(i=0; i<2; i++) for(j=0; j<2; j++) for(k=0; k<2; k++)
-                    tmp[i][j]=(tmp[i][j]+fib[i][k]*fib[k][j])%MOD;
-        for(i=0; i<2; i++) for(j=0; j<2; j++) fib[i][j]=tmp[i][j];
-        n/=2;
-    }
-    return (ret[0][1]);
+void check(Trie *trie,int node){
+	// Error("entering check",node);
+	rep(t1,Adj[node]){
+		check(trie->next1[t1.y],t1.x);
+	}
+	// Error("exiting check",node);
 }
 
-void tryAll(int b,int e){
-	if(b==e){
-		answer1=((answer1+2*nthFib(a[b]+1)-1)%MOD+MOD)%MOD;
+void DFS1(int u,int p){
+	// Error(u,p);
+	int maxSize1=-1;
+	int maxNode=-1;
+	rep(t1,Adj[u]){
+		if(t1.x!=p){
+			if(madeTries[t1.x]->size1>maxSize1){
+				maxSize1=madeTries[t1.x]->size1;
+				maxNode=t1.x;
+			}
+		}
 	}
-	else{
-		int m=(b+e)/2;
-		int prevSum=0;
-		ll f1=0;
-		ll f2=0;
-		ll f3=0;
-		ll f4=0;
-		rof(i,m,b-1){
-			prevSum=prevSum+a[i];
-			f1=(f1+nthFib(prevSum+1));
-			func(f1);
-			f2=(f2+nthFib(prevSum));
-			func(f2);
+	// Error(u,maxNode);
+	if(maxNode==-1){
+		return ;
+	}
+	Error3(u,maxNode,maxSize1);
+	rep(t1,Adj[u]){
+		if(t1.x!=p && t1.x!=maxNode){
+			// Error3("merging",t1.x,maxNode);
+			mergeNode(madeTries[maxNode],t1.x);
 		}
-		prevSum=0;
-		For(i,m+1,e+1){
-			prevSum=prevSum+a[i];
-			f3=(f3+nthFib(prevSum+1));
-			func(f3);
-			f4=(f4+nthFib(prevSum));
-			func(f4);
+	}
+	Error4(u,level1[u],madeTries[maxNode]->size1,size1[u]);
+	delta1[level1[u]]+=size1[u]-madeTries[maxNode]->size1;
+	// Error(u,delta1[u]);
+	rep(t1,Adj[u]){
+		if(t1.x!=p && t1.x!=maxNode){
+			removeNode(madeTries[maxNode],t1.x);
 		}
-		ll temp1=(f1*f3+f2*f4)%MOD;
-		temp1=(2*temp1)%MOD;
-		temp1=((temp1-(m-b+1)*(e-m))%MOD+MOD)%MOD;
-		// Error4(b,e,m,temp1);
-		answer1=(answer1+temp1)%MOD;
-		tryAll(b,m);
-		tryAll(m+1,e);
+	}
+	check(madeTries[maxNode],maxNode);
+	rep(t1,Adj[u]){
+		if(t1.x!=p){
+			DFS1(t1.x,u);
+			// Error3("returned from",u,t1.x);
+		}
 	}
 }
 
 int main(){
 	int n;
-	ll m;
-	scanf("%d%lld",&n,&m);
-	MOD=m;
-	// error(nthFib(8));
-	For(i,0,n){
-		ll temp;
-		scanf("%lld",&temp);
-		a[i]=temp;
+	scanf("%d",&n);
+	For(i,1,n){
+		int a1,b1;
+		char c1[2];
+		scanf("%d%d%s",&a1,&b1,c1);
+		// Error3(a1,b1,c1[0]-'a');
+		Adj[a1].pb(mp(b1,c1[0]-'a'));
+		// getchar();
 	}
 
-	tryAll(0,n-1);
-	printf("%lld\n",answer1);
+	DFS(1,0);
+	DFS1(1,0);
+	// debug;
+	int min1=INT_MAX;
+	int levelVal=-1;
+	// Error(1,size1[1]);
+	For(i,0,n+1){
+		// Error(i,delta1[i]);
+		if(size1[1]-delta1[i]<min1){
+			// Error3(size1[1],delta1[i],size1[1]+delta1[i]);
+			min1=size1[1]-delta1[i];
+			levelVal=i;
+		}
+	}
+	// Error3(size1[1],min1,levelVal);
+	printf("%d\n",min1);
+	printf("%d\n",levelVal);
+	// debug;
 return 0;}
+
+//TODO http://codeforces.com/contest/778/problem/C
+// http://codeforces.com/problemset/problem/521/E
+// http://codeforces.com/problemset/problem/478/E editorial http://codeforces.com/blog/entry/14307#comment-192751
